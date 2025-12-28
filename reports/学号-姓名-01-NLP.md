@@ -1,14 +1,20 @@
 # [阶段性报告] 基于 RAG 的法律领域智能问答系统 (Juris-RAG)
 
-## 0. 项目进展简述 (Phase 1 Status)
+## 0. 项目进展简述 (Phase 1→2 中途状态)
 
-- **当前状态**：✅ 基础设施搭建完成。已完成项目骨架构建、CAIL2018 数据集清洗与入库、核心 RAG 检索引擎（`rag_engine.py`）编写，并跑通了基于命令行的最小可行性测试（MVP）。
+- **当前状态**：✅ Web UI、评估与端到端链路已跑通。完成 Gradio 前端（聊天/搜索/信息页）、评估器（`eval.py`）、向量库构建（`data/vector_db/`）、RAG 引擎完善（引用与置信度），并通过 CLI + Web 双通路测试。
+- **本次推进亮点**：
+   - Gradio 多标签界面：智能问答、文档搜索、系统信息；支持置信度与引用展示。
+   - 评估管线：内置评测集与指标（Accuracy/Citation F1/Hallucination/Latency），自动保存 JSON 报告至 `reports/`。
+   - 向量化稳健性：批处理 + 指数回退，规避 API 限速；已生成 `chroma.sqlite3` 与持久化目录。
+   - 拒答机制：低置信度与越界问题明确拒答，降低幻觉风险。
 - **已完成工作**：
-  - 数据清洗脚本（ETL）：实现对刑法法条和 CAIL 案例的清洗、分块与向量化。
-  - 向量数据库：基于 ChromaDB 构建了包含刑法核心法条的本地知识库。
-  - 核心引擎：实现了基于 LangChain 的多轮对话检索链路。
+   - 数据清洗（ETL）：刑法法条与 CAIL 案例的清洗、分块与向量化（BGE-M3）。
+   - 向量数据库：基于 ChromaDB 的法条+案例双库，持久化于 `data/vector_db/`。
+   - 核心引擎：LangChain 历史感知检索链 + 生成链，引用来源与置信度计算。
+   - 前端与交互：Gradio Web 应用；引用展示与置信度提示；文档搜索 Tab。
 - **仓库链接**：[GitHub - Juris-RAG](https://github.com/liuxinglin70-cmyk/Juris-RAG)
-- **本次 PR 内容**：基础代码框架、数据处理脚本、核心 RAG 引擎逻辑。
+- **本次 PR 内容**：补充 Web UI、评估脚本、配置与错误处理逻辑。
 
 ------
 
@@ -123,6 +129,20 @@
 | **引用规范** | 引用 F1 Score     | > 75%      | 待评测       |
 | **系统性能** | 平均响应时间      | < 3s       | ~2.5s (API)  |
 
+### 4.3 Web UI 测试 (Gradio)
+
+当前 Web 端已支持：
+
+- 置信度提示：以颜色与百分比显示（阈值控制不确定回答）。
+- 引用展示：按来源与元数据（罪名/条款）列出，便于追溯。
+- 文档搜索：不经 LLM，直接返回 Top-K 相似文档。
+
+示例（界面交互与 CLI 一致）：
+
+> 问题：盗窃罪的量刑标准是什么？
+>
+> 回答：根据《刑法》相关规定……并附 [来源] 与置信度。
+
 ------
 
 ## 五、问题分析与创新点
@@ -170,16 +190,27 @@ python src/rag_engine.py
 
 *(已提供 Gradio Web UI：访问 http://localhost:7860)*
 
+PowerShell（Windows）
+
+```
+# 1. 安装依赖
+pip install -r requirements.txt
+# 2. 设置 API Key（当前会话）
+$env:SILICONFLOW_API_KEY="sk-xxxx"
+# 3. 构建向量库
+python -m src.data_processing
+# 4. 启动 Web UI
+python app.py
+```
+
 ------
 
 ## 七、未来改进方向 (Next Steps)
 
-针对本次作业的最终交付要求，接下来的两周计划如下：
+围绕性能与可靠性继续迭代：
 
-1. **Day 5-7 (前端开发)**：使用 Gradio 构建可视化 Web 界面，并完善侧边栏显示详细法条引用。
-2. **Day 8-10 (性能优化)**：
-   - 引入 **Rerank (重排序)** 模型，优化检索结果的 Top-K 准确率。
-   - 扩大数据规模至 10k+，测试长上下文性能。
-3. **Day 11-14 (评估与报告)**：
-   - 完善 `eval.py`，使用 LLM-as-a-Judge 进行自动化打分。
-   - 绘制准确率随数据量变化的曲线图，完成最终实验报告。
+1. **检索质量优化**：集成 Rerank 模型（如 Cohere/RAG-Rerank 或 Cross-Encoder），提升 Top-K 命中与 Citation F1。
+2. **数据规模扩展**：将案例库扩展至 10k+，观测 Recall/Latency 变化并更新评估报告。
+3. **评估深化**：完善 `eval.py` 的类别细分与曲线绘制，自动导出 `reports/eval_report_*.json` 并附可视化。
+4. **鲁棒性与容错**：细化速率限制与重试策略，补充日志追踪与异常上报。
+5. **可能的微调**：尝试 LoRA/提示优化，降低幻觉率，提高刑法场景准确率。
