@@ -162,11 +162,13 @@ pip install -r requirements.txt
 export SILICONFLOW_API_KEY=sk-xxxx
 # 3. 运行数据处理
 python src/data_processing.py
-# 4. 启动命令行测试
+# 4. 启动 Web UI（Gradio）
+python app.py
+# 5. 启动命令行测试（可选）
 python src/rag_engine.py
 ```
 
-*(Web UI 界面开发中，预计下周上线)*
+*(已提供 Gradio Web UI：访问 http://localhost:7860)*
 
 ------
 
@@ -174,7 +176,7 @@ python src/rag_engine.py
 
 针对本次作业的最终交付要求，接下来的两周计划如下：
 
-1. **Day 5-7 (前端开发)**：使用 Streamlit 构建可视化 Web 界面，实现侧边栏显示详细法条引用。
+1. **Day 5-7 (前端开发)**：使用 Gradio 构建可视化 Web 界面，并完善侧边栏显示详细法条引用。
 2. **Day 8-10 (性能优化)**：
    - 引入 **Rerank (重排序)** 模型，优化检索结果的 Top-K 准确率。
    - 扩大数据规模至 10k+，测试长上下文性能。

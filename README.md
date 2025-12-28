@@ -13,7 +13,7 @@
 
 | 特性 | 描述 |
 |------|------|
-| 📚 **领域知识库** | 整合刑法法条 + 5000+ CAIL司法案例 |
+| 📚 **领域知识库** | 整合刑法法条 + 20k CAIL司法案例 |
 | 🔍 **语义检索** | 基于BGE-M3向量模型的精准语义匹配 |
 | 🤖 **智能生成** | Qwen2.5-7B大模型生成专业回答 |
 | 💬 **多轮对话** | 支持上下文理解，连续追问 |
@@ -36,7 +36,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │                  向量数据库 (ChromaDB)                       │
 │  ┌─────────────────────┐  ┌───────────────────────────────┐│
-│  │ 刑法法条 (Statute)  │  │ CAIL案例 (Case) - 5000+条    ││
+│  │ 刑法法条 (Statute)  │  │ CAIL案例 (Case) - 20k+条    ││
 │  └─────────────────────┘  └───────────────────────────────┘│
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -56,12 +56,14 @@ Juris-RAG/
 │   ├── __init__.py
 │   ├── config.py             # 配置参数
 │   ├── data_processing.py    # 数据处理与向量化
+│   ├── cail_adapter.py       # CAIL数据文件选择适配
 │   └── rag_engine.py         # RAG核心引擎
 │
 ├── 📂 data/                  # 数据目录
 │   ├── raw/                  # 原始数据
 │   │   ├── criminal_code.txt # 刑法文本
-│   │   └── cail_cases.json   # CAIL案例数据
+│   │   ├── cail_cases_20k.json # CAIL案例精简数据
+│   │   └── cail_cases.json     # 原始案例数据（可选）
 │   ├── eval/                 # 评估数据
 │   └── vector_db/            # 向量数据库（自动生成）
 │
@@ -118,7 +120,10 @@ export SILICONFLOW_API_KEY=your_api_key_here
 
 确保 `data/raw/` 目录下有以下文件：
 - `criminal_code.txt` - 刑法文本
-- `cail_cases.json` - CAIL案例数据（JSON Lines格式）
+- `cail_cases_20k.json` - CAIL案例精简数据（JSON Lines格式，推荐）
+- `cail_cases.json` - 原始案例数据（可选，体积较大）
+
+系统会自动优先使用 `cail_cases_20k.json`，若不存在则回退为 `cail_cases.json`。
 
 ### 4. 构建向量数据库
 
@@ -130,15 +135,15 @@ python -m src.data_processing
 ```
 📄 正在加载法条: ./data/raw/criminal_code.txt
 ✅ 加载法条完成，共 XXX 个文档块
-⚖️ 正在加载 CAIL 案例: ./data/raw/cail_cases.json (限制 5000 条)
-✅ 加载案例完成，共 5000 个文档
+⚖️ 正在加载 CAIL 案例: ./data/raw/cail_cases_20k.json (限制 20000 条)
+✅ 加载案例完成，共 20000 个文档
 
 📊 数据集统计:
    总文档数: 5XXX
-   按类型分布: {'statute': XXX, 'case': 5000}
+   按类型分布: {'statute': XXX, 'case': 20000}
    平均长度: XXX.X 字符
 
-📦 准备向量化 5XXX 条文档...
+📦 准备向量化 20XXX 条文档...
 ✅ 向量数据库构建完成！已保存至 ./data/vector_db
 ```
 
