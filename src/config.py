@@ -40,8 +40,8 @@ CHUNK_OVERLAP = 100  # 文本块之间的重叠
 RETRIEVAL_TOP_K = 5  # 检索返回的文档数量
 RETRIEVAL_SCORE_THRESHOLD = 0.3  # 相似度阈值，低于此值的结果将被过滤
 
-# 重排序参数（可选）
-ENABLE_RERANK = True
+# 重排序参数（预留，尚未在引擎中启用）
+ENABLE_RERANK = False
 RERANK_TOP_K = 3  # 重排序后保留的文档数量
 
 # ==================== 长上下文配置 ====================

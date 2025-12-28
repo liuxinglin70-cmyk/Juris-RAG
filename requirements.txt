@@ -4,7 +4,6 @@
 
 # Web 框架
 gradio>=4.0.0
-streamlit>=1.28.0
 
 # LLM 和嵌入模型
 openai>=1.3.0
