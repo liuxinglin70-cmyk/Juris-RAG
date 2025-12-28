@@ -11,9 +11,18 @@ from typing import List, Dict, Optional, Tuple
 from tqdm import tqdm
 
 # LangChain 组件
-from langchain.schema import Document
+try:
+    from langchain_core.documents import Document
+except ImportError:  # fallback for older langchain versions
+    try:
+        from langchain.schema import Document
+    except ImportError:
+        from langchain_classic.schema import Document
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
+try:
+    from langchain_openai import OpenAIEmbeddings
+except ImportError:  # fallback for older installs
+    from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # 导入配置
@@ -21,7 +30,9 @@ try:
     from src.config import (
         DATA_PATH, DB_PATH, EMBEDDING_MODEL, SILICONFLOW_API_KEY,
         SILICONFLOW_BASE_URL, CHUNK_SIZE, CHUNK_OVERLAP, 
-        CAIL_CASE_LIMIT, STATUTE_SEPARATORS
+        CAIL_CASE_LIMIT, STATUTE_SEPARATORS,
+        EMBED_BATCH_SIZE, EMBED_SLEEP_SECONDS, EMBED_MAX_RETRIES,
+        EMBED_BACKOFF_SECONDS, EMBED_BACKOFF_MAX_SECONDS
     )
     from src.cail_adapter import get_cail_file_path
 except ImportError:
@@ -35,6 +46,11 @@ except ImportError:
     CHUNK_OVERLAP = 100
     CAIL_CASE_LIMIT = 20000
     STATUTE_SEPARATORS = ["\n第", "\n\n", "\n", "。", "；"]
+    EMBED_BATCH_SIZE = 20
+    EMBED_SLEEP_SECONDS = 6
+    EMBED_MAX_RETRIES = 5
+    EMBED_BACKOFF_SECONDS = 10
+    EMBED_BACKOFF_MAX_SECONDS = 120
     
     def get_cail_file_path():
         from pathlib import Path
@@ -249,7 +265,7 @@ class LegalDataProcessor:
         print(f"✅ 加载QA对完成，共 {len(docs)} 个文档")
         return docs
     
-    def build_vector_db(self, docs: List[Document], batch_size: int = 50) -> Chroma:
+    def build_vector_db(self, docs: List[Document], batch_size: int = EMBED_BATCH_SIZE) -> Chroma:
         """
         构建向量数据库
         使用批量处理避免API超时
@@ -272,28 +288,47 @@ class LegalDataProcessor:
         vectorstore = None
         
         # 批量处理
+        def is_rate_limit_error(err: Exception) -> bool:
+            message = str(err).lower()
+            return ("rate limit" in message or "rpm limit" in message or "429" in message or "too many" in message)
+
         for i in tqdm(range(0, len(docs), batch_size), desc="向量化进度"):
             batch = docs[i:i + batch_size]
+            retries = 0
             
-            try:
-                if vectorstore is None:
-                    # 第一批：创建新的向量库
-                    vectorstore = Chroma.from_documents(
-                        documents=batch,
-                        embedding=self.embeddings,
-                        persist_directory=DB_PATH
-                    )
-                else:
-                    # 后续批：添加到现有向量库
-                    vectorstore.add_documents(batch)
-                
-                # 避免API速率限制
-                time.sleep(0.3)
-                
-            except Exception as e:
-                print(f"⚠️ 批次 {i//batch_size + 1} 处理失败: {e}")
-                time.sleep(2)  # 出错后多等待
-                continue
+            while True:
+                try:
+                    if vectorstore is None:
+                        # 第一批：创建新的向量库
+                        vectorstore = Chroma.from_documents(
+                            documents=batch,
+                            embedding=self.embeddings,
+                            persist_directory=DB_PATH
+                        )
+                    else:
+                        # 后续批：添加到现有向量库
+                        vectorstore.add_documents(batch)
+                    
+                    # 避免API速率限制
+                    time.sleep(EMBED_SLEEP_SECONDS)
+                    break
+                    
+                except Exception as e:
+                    if is_rate_limit_error(e):
+                        retries += 1
+                        if retries > EMBED_MAX_RETRIES:
+                            raise RuntimeError(
+                                "触发RPM限制，已达到最大重试次数。"
+                                "请完成账号实名认证或增大等待时间后重试。"
+                            ) from e
+                        backoff = min(EMBED_BACKOFF_SECONDS * (2 ** (retries - 1)), EMBED_BACKOFF_MAX_SECONDS)
+                        print(f"⚠️ 批次 {i//batch_size + 1} 触发限速，等待 {backoff:.0f}s 后重试...")
+                        time.sleep(backoff)
+                        continue
+                    
+                    print(f"⚠️ 批次 {i//batch_size + 1} 处理失败: {e}")
+                    time.sleep(2)  # 出错后多等待
+                    break
         
         print(f"✅ 向量数据库构建完成！已保存至 {DB_PATH}")
         return vectorstore
