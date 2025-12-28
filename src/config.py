@@ -69,8 +69,8 @@ UNCERTAIN_RESPONSE = """抱歉，根据现有法律数据库，我无法准确�
 建议：请咨询专业律师获取准确的法律意见。"""
 
 # ==================== 数据处理配置 ====================
-# CAIL数据集加载限制
-CAIL_CASE_LIMIT = 20000  # 已精简至20000条，便于git提交和RAG性能
+# CAIL数据集加载限制（可通过环境变量覆盖）
+CAIL_CASE_LIMIT = int(os.getenv("CAIL_CASE_LIMIT", "20000"))
 
 # 法条分割模式
 STATUTE_SEPARATORS = ["\n第", "\n\n", "\n", "。", "；"]
@@ -95,3 +95,11 @@ APP_DESCRIPTION = """
 # ==================== 评估配置 ====================
 EVAL_BATCH_SIZE = 10
 EVAL_METRICS = ["accuracy", "citation_f1", "hallucination_rate", "relevance"]
+
+# ==================== 向量化节流配置 ====================
+# 可通过环境变量覆盖，避免触发RPM限制
+EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "20"))
+EMBED_SLEEP_SECONDS = float(os.getenv("EMBED_SLEEP_SECONDS", "6"))
+EMBED_MAX_RETRIES = int(os.getenv("EMBED_MAX_RETRIES", "5"))
+EMBED_BACKOFF_SECONDS = float(os.getenv("EMBED_BACKOFF_SECONDS", "10"))
+EMBED_BACKOFF_MAX_SECONDS = float(os.getenv("EMBED_BACKOFF_MAX_SECONDS", "120"))

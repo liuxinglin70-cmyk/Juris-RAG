@@ -7,13 +7,26 @@ from typing import List, Dict, Tuple, Optional, Generator
 from dataclasses import dataclass
 
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
+try:
+    from langchain_openai import OpenAIEmbeddings
+except ImportError:  # fallback for older installs
+    from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.schema import Document
+try:
+    from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+    from langchain.chains.combine_documents import create_stuff_documents_chain
+except ImportError:  # langchain>=1.0 moved legacy chains to langchain_classic
+    from langchain_classic.chains import create_history_aware_retriever, create_retrieval_chain
+    from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+try:
+    from langchain_core.documents import Document
+except ImportError:  # fallback for older langchain versions
+    try:
+        from langchain.schema import Document
+    except ImportError:
+        from langchain_classic.schema import Document
 
 # 导入配置
 try:
