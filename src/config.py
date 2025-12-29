@@ -78,13 +78,13 @@ STATUTE_SEPARATORS = ["\n第", "\n\n", "\n", "。", "；"]
 # ==================== Web应用配置 ====================
 APP_TITLE = "Juris-RAG 法律智能问答系统"
 APP_DESCRIPTION = """
-🏛️ **Juris-RAG** 是一个基于检索增强生成（RAG）技术的中文法律问答系统。
+**Juris-RAG** 是一个基于检索增强生成（RAG）技术的中文法律问答系统。
 
 **功能特点：**
-- 📚 支持刑法法条和案例检索
-- 💬 多轮对话，理解上下文
-- 📝 提供引用来源，可追溯
-- 🚫 对不确定的问题会明确告知
+- 支持刑法法条和案例检索
+- 多轮对话，理解上下文
+- 提供引用来源，可追溯
+- 对不确定的问题会明确告知
 
 **使用提示：**
 - 输入您的法律问题，系统会检索相关法条和案例
@@ -97,9 +97,11 @@ EVAL_BATCH_SIZE = 10
 EVAL_METRICS = ["accuracy", "citation_f1", "hallucination_rate", "relevance"]
 
 # ==================== 向量化节流配置 ====================
-# 可通过环境变量覆盖，避免触发RPM限制
+# 可通过环境变量覆盖，避免触发RPM/TPM限制
+EMBED_RPM_LIMIT = int(os.getenv("EMBED_RPM_LIMIT", "2000"))
+EMBED_TPM_LIMIT = int(os.getenv("EMBED_TPM_LIMIT", "500000"))
 EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "20"))
-EMBED_SLEEP_SECONDS = float(os.getenv("EMBED_SLEEP_SECONDS", "6"))
+EMBED_SLEEP_SECONDS = float(os.getenv("EMBED_SLEEP_SECONDS", "0.1"))
 EMBED_MAX_RETRIES = int(os.getenv("EMBED_MAX_RETRIES", "5"))
 EMBED_BACKOFF_SECONDS = float(os.getenv("EMBED_BACKOFF_SECONDS", "10"))
 EMBED_BACKOFF_MAX_SECONDS = float(os.getenv("EMBED_BACKOFF_MAX_SECONDS", "120"))

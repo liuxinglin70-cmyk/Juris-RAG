@@ -31,6 +31,7 @@ try:
         DATA_PATH, DB_PATH, EMBEDDING_MODEL, SILICONFLOW_API_KEY,
         SILICONFLOW_BASE_URL, CHUNK_SIZE, CHUNK_OVERLAP, 
         CAIL_CASE_LIMIT, STATUTE_SEPARATORS,
+        EMBED_RPM_LIMIT, EMBED_TPM_LIMIT,
         EMBED_BATCH_SIZE, EMBED_SLEEP_SECONDS, EMBED_MAX_RETRIES,
         EMBED_BACKOFF_SECONDS, EMBED_BACKOFF_MAX_SECONDS
     )
@@ -46,8 +47,10 @@ except ImportError:
     CHUNK_OVERLAP = 100
     CAIL_CASE_LIMIT = 20000
     STATUTE_SEPARATORS = ["\n第", "\n\n", "\n", "。", "；"]
+    EMBED_RPM_LIMIT = 2000
+    EMBED_TPM_LIMIT = 500000
     EMBED_BATCH_SIZE = 20
-    EMBED_SLEEP_SECONDS = 6
+    EMBED_SLEEP_SECONDS = 0.1
     EMBED_MAX_RETRIES = 5
     EMBED_BACKOFF_SECONDS = 10
     EMBED_BACKOFF_MAX_SECONDS = 120
@@ -292,6 +295,16 @@ class LegalDataProcessor:
             message = str(err).lower()
             return ("rate limit" in message or "rpm limit" in message or "429" in message or "too many" in message)
 
+        def get_batch_sleep_seconds(batch_docs) -> float:
+            rpm_wait = 0.0
+            if EMBED_RPM_LIMIT > 0:
+                rpm_wait = 60.0 / EMBED_RPM_LIMIT
+            tpm_wait = 0.0
+            if EMBED_TPM_LIMIT > 0:
+                approx_tokens = sum(len(doc.page_content) for doc in batch_docs)
+                tpm_wait = (approx_tokens / EMBED_TPM_LIMIT) * 60.0
+            return max(EMBED_SLEEP_SECONDS, rpm_wait, tpm_wait)
+
         for i in tqdm(range(0, len(docs), batch_size), desc="向量化进度"):
             batch = docs[i:i + batch_size]
             retries = 0
@@ -310,7 +323,9 @@ class LegalDataProcessor:
                         vectorstore.add_documents(batch)
                     
                     # 避免API速率限制
-                    time.sleep(EMBED_SLEEP_SECONDS)
+                    sleep_seconds = get_batch_sleep_seconds(batch)
+                    if sleep_seconds > 0:
+                        time.sleep(sleep_seconds)
                     break
                     
                 except Exception as e:
