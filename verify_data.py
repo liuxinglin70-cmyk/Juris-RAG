@@ -43,9 +43,10 @@ def verify_txt_file(filepath, expected_name):
         print(f"   ❌ UTF-8编码: 错误 - {result}")
         return False
     
-    # 读取前几行检查内容
+    # 读取全部内容检查
     with open(filepath, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f.readlines()[:20] if line.strip()]
+        full_content = f.read()
+        lines = [line.strip() for line in full_content.split('\n') if line.strip()]
     
     if len(lines) < 3:
         print(f"   ⚠️  警告: 文件内容太少")
@@ -53,10 +54,9 @@ def verify_txt_file(filepath, expected_name):
     
     print(f"   ✓ 文件标题: {lines[0][:50]}")
     
-    # 检查是否包含法律条文特征
-    content_sample = '\n'.join(lines)
-    has_articles = '第' in content_sample and '条' in content_sample
-    has_chapter = '第' in content_sample and ('章' in content_sample or '编' in content_sample)
+    # 检查是否包含法律条文特征（检查全文）
+    has_articles = '第' in full_content and '条' in full_content
+    has_chapter = '第' in full_content and ('章' in full_content or '编' in full_content)
     
     if has_articles:
         print(f"   ✓ 检测到法律条文结构")

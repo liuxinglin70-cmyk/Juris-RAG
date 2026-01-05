@@ -45,12 +45,12 @@ except ImportError:
     SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
     CHUNK_SIZE = 500
     CHUNK_OVERLAP = 100
-    CAIL_CASE_LIMIT = 20000
+    CAIL_CASE_LIMIT = int(os.getenv("CAIL_CASE_LIMIT", "100000"))
     STATUTE_SEPARATORS = ["\n第", "\n\n", "\n", "。", "；"]
-    EMBED_RPM_LIMIT = 2000
-    EMBED_TPM_LIMIT = 500000
-    EMBED_BATCH_SIZE = 20
-    EMBED_SLEEP_SECONDS = 0.1
+    EMBED_RPM_LIMIT = int(os.getenv("EMBED_RPM_LIMIT", "2000"))
+    EMBED_TPM_LIMIT = int(os.getenv("EMBED_TPM_LIMIT", "500000"))
+    EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "20"))
+    EMBED_SLEEP_SECONDS = float(os.getenv("EMBED_SLEEP_SECONDS", "0.1"))
     EMBED_MAX_RETRIES = 5
     EMBED_BACKOFF_SECONDS = 10
     EMBED_BACKOFF_MAX_SECONDS = 120
@@ -200,7 +200,7 @@ class LegalDataProcessor:
                     content_text = self.clean_text(content_text)
                     
                     if len(content_text) > 20:  # 过滤过短的内容
-                        doc_id = self.generate_doc_id(content_text, "刑法")
+                        doc_id = self.generate_doc_id(content_text, domain_name)
                         
                         # 在内容前添加条款号和章节信息，增强检索效果
                         full_content = f"{current_article} {content_text}"
@@ -231,11 +231,13 @@ class LegalDataProcessor:
                 elif not any(kw in part for kw in ['目录', '目　　录', '第一编', '第二编']):
                     # 前言部分（修订历史等），也可以保留
                     if len(part) > 100:
-                        doc_id = self.generate_doc_id(part[:100], "刑法前言")
+                        doc_id = self.generate_doc_id(part[:100], f"{domain_name}前言")
                         docs.append(Document(
                             page_content=self.clean_text(part),
                             metadata={
-                                "source": "中华人民共和国刑法",
+                                "source": domain_info.get('description', domain_name),
+                                "domain": domain_key,
+                                "domain_name": domain_name,
                                 "type": "statute",
                                 "article": "前言",
                                 "chapter": "",
@@ -258,7 +260,9 @@ class LegalDataProcessor:
                 docs.append(Document(
                     page_content=full_content,
                     metadata={
-                        "source": "中华人民共和国刑法",
+                        "source": domain_info.get('description', domain_name),
+                        "domain": domain_key,
+                        "domain_name": domain_name,
                         "type": "statute",
                         "article": current_article,
                         "chapter": chapter_info,
