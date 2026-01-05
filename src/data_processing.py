@@ -15,7 +15,7 @@ try:
     from langchain_core.documents import Document
 except ImportError:  # fallback for older langchain versions
     try:
-        from langchain.schema import Document
+        from langchain_core.documents import Document
     except ImportError:
         from langchain_classic.schema import Document
 from langchain_community.vectorstores import Chroma

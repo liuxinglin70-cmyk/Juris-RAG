@@ -7,4 +7,17 @@
 {"question": "自首可以减刑吗？", "answer": "犯罪以后自动投案，如实供述自己的罪行的，是自首。对于自首的犯罪分子，可以从轻或者减轻处罚。", "sources": ["刑法", "statute"], "category": "special_case"}
 {"question": "诈骗案一般怎么判？", "answer": "诈骗公私财物，数额较大的，处三年以下有期徒刑、拘役或者管制，并处或者单处罚金；数额巨大或者有其他严重情节的，处三年以上十年以下有期徒刑，并处罚金。", "sources": ["刑法", "case"], "category": "case_related"}
 {"question": "交通肇事罪怎么判？", "answer": "违反交通运输管理法规，因而发生重大事故，致人重伤、死亡或者使公私财产遭受重大损失的，处三年以下有期徒刑或者拘役。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "强奸罪如何判刑？", "answer": "以暴力、胁迫或者其他手段强奸妇女的，处三年以上十年以下有期徒刑。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "走私罪会面临什么处罚？", "answer": "走私武器、弹药、核材料或者伪造的货币的，处七年以上有期徒刑，可以并处罚金或者没收财产。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "贩毒罪的量刑标准？", "answer": "走私、贩运、制造、持有、使用毒品的，依照本章规定处罚。量刑考虑毒品数量、性质等因素。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "什么是共同犯罪？", "answer": "二人以上共同故意犯罪的，是共同犯罪。共同犯罪人应当承担责任。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "缓刑的条件是什么？", "answer": "对被判处拘役、三年以下有期徒刑的犯罪分子，根据犯罪人的犯罪情节和悔罪表现，如果认为暂缓执行原判刑罚，确实不致再危害社会的，可以宣告缓刑。", "sources": ["刑法", "statute"], "category": "special_case"}
+{"question": "累犯应该如何处罚？", "answer": "前罪和后罪都是故意犯罪或者都是过失犯罪的，以及先后犯罪的间隔距离和犯罪人改造表现等情况，应当从重处罚。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "贪污贿赂罪怎么判？", "answer": "国家工作人员利用职务上的便利，索取他人财物或者非法收受他人财物，为他人谋取利益的，是受贿罪。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "伪证罪的定义是什么？", "answer": "在刑事诉讼中，证人、鉴定人、记录人、翻译人故意作虚假证明、鉴定、记录、翻译，意图陷害他人或者隐匿罪证的，处三年以下有期徒刑或者拘役。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "什么时候应该减轻处罚？", "answer": "犯罪情节轻微、危害不大的，不认为是犯罪，或者可以减轻处罚。", "sources": ["刑法", "statute"], "category": "special_case"}
+{"question": "抢劫罪和盗窃罪的区别？", "answer": "抢劫罪以暴力、胁迫或者其他方法强行夺取财物；盗窃罪是秘密盗取。二者手段完全不同。", "sources": ["刑法", "statute"], "category": "criminal_law"}
+{"question": "聚众斗殴罪如何处罚？", "answer": "聚众斗殴的，对首要分子和其他积极参加的，处三年以下有期徒刑、拘役或者管制。", "sources": ["刑法", "statute"], "category": "criminal_law"}
 {"question": "民法典关于合同的规定是什么？", "answer": "", "sources": [], "category": "out_of_scope"}
+{"question": "股票投资有什么法律风险？", "answer": "", "sources": [], "category": "out_of_scope"}
+{"question": "公司法中关于董事责任的规定是什么？", "answer": "", "sources": [], "category": "out_of_scope"}
