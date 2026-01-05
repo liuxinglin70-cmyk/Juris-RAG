@@ -18,7 +18,7 @@
 
 ### 2. CAIL 司法案例数据集 ⚠️
 
-**文件名**: `cail_cases_20k.json` 或 `cail_cases.json`  
+**文件名**: `cail_cases.json`  
 **大小**: ~140 MB  
 **格式**: JSON数组  
 **说明**: 中国法研杯（CAIL）司法人工智能挑战赛数据集
@@ -33,7 +33,7 @@
 
 下载后：
 1. 解压缩
-2. 重命名为 `cail_cases_20k.json`
+2. 重命名为 `cail_cases.json`
 3. 放入 `data/raw/` 目录
 
 **选项2: 使用预处理数据集**
@@ -47,12 +47,12 @@
 创建一个小规模测试数据集：
 
 ```bash
-# 从完整数据集中提取前100个案例
+# 从完整数据集中提取前100个案例（用于快速测试）
 python -c "
 import json
 with open('data/raw/cail_cases.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
-with open('data/raw/cail_cases_20k.json', 'w', encoding='utf-8') as f:
+with open('data/raw/cail_cases_test.json', 'w', encoding='utf-8') as f:
     json.dump(data[:100], f, ensure_ascii=False, indent=2)
 "
 ```
@@ -94,7 +94,7 @@ python verify_data.py
 ✅ administrative_law.txt: 通过
 ✅ labor_law.txt: 通过
 ✅ commercial_law.txt: 通过
-✅ cail_cases_20k.json: 通过
+✅ cail_cases.json: 通过
 ```
 
 ## 🔄 处理数据
@@ -141,7 +141,7 @@ export CAIL_CASE_LIMIT=10000
 
 ## 📝 注意事项
 
-1. **大文件不在Git中**: `cail_cases_20k.json` 因为超过 GitHub 的 100MB 限制，不包含在仓库中
+1. **大文件不在Git中**: `cail_cases.json` 因为超过 GitHub 的 100MB 限制，不包含在仓库中
 2. **本地生成**: 向量数据库（`data/vector_db/`）也不在 Git 中，需要本地生成
 3. **数据版权**: 使用 CAIL 数据集请遵守其使用协议
 4. **磁盘空间**: 确保有足够空间（至少 500 MB）

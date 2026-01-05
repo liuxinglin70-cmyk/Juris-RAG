@@ -66,7 +66,7 @@ Juris-RAG/
 ├── data/                  # 数据目录
 │   ├── raw/               # 原始数据
 │   │   ├── criminal_code.txt
-│   │   ├── cail_cases_20k.json
+│   │   ├── cail_cases.json
 │   │   └── cail_cases.json
 │   ├── eval/              # 评估数据
 │   └── vector_db/         # 向量数据库（自动生成）
@@ -133,7 +133,7 @@ python -m src.data_processing
 ```
 正在加载法条: ./data/raw/criminal_code.txt
 加载法条完成，共 XXX 个文档块
-正在加载 CAIL 案例: ./data/raw/cail_cases_20k.json (限制 20000 条)
+正在加载 CAIL 案例: ./data/raw/cail_cases.json (限制 20000 条)
 加载案例完成，共 20000 个文档
 
 数据集统计:

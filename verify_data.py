@@ -151,8 +151,8 @@ def main():
         results[filename] = verify_txt_file(filepath, name)
     
     # 验证CAIL案例文件
-    cail_file = data_dir / "cail_cases_20k.json"
-    results['cail_cases_20k.json'] = verify_json_file(cail_file)
+    cail_file = data_dir / "cail_cases.json"
+    results['cail_cases.json'] = verify_json_file(cail_file)
     
     # 汇总结果
     print(f"\n{'='*60}")

@@ -58,9 +58,8 @@ except ImportError:
     def get_cail_file_path():
         from pathlib import Path
         data_dir = Path(DATA_PATH)
-        trimmed = data_dir / "cail_cases_20k.json"
-        original = data_dir / "cail_cases.json"
-        return str(trimmed if trimmed.exists() else original)
+        cail_file = data_dir / "cail_cases.json"
+        return str(cail_file)
 
 
 class LegalDataProcessor:
