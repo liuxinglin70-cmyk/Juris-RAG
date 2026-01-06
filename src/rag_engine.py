@@ -179,6 +179,8 @@ class JurisRAGEngine:
         
         self.streaming = streaming
         self.chat_history: List[Tuple[str, str]] = []
+        self.vectorstore = None  # 防止AttributeError
+        self.multi_domain_mode = False
         
         # 初始化组件
         self._init_embeddings()
@@ -389,6 +391,7 @@ class JurisRAGEngine:
         """
         混合检索策略：分别检索法条和案例，然后合并
         使用多查询增强 + 关键词过滤提高法条检索精度
+        支持多领域和单领域模式
         
         ChromaDB的分数越低表示越相关（L2距离）
         """
@@ -399,44 +402,60 @@ class JurisRAGEngine:
         statute_k = max(4, k // 2 + 1)  # 法条数量
         case_k = k - statute_k + 2  # 案例数量
         
+        # 获取要使用的向量库列表
+        vectorstores = []
+        if getattr(self, 'multi_domain_mode', False) and hasattr(self, 'vectorstores_multi'):
+            # 多领域模式：使用所有领域的向量库
+            vectorstores = [item['vectorstore'] for item in self.vectorstores_multi.values() if 'vectorstore' in item]
+        elif getattr(self, 'vectorstore', None):
+            # 单领域模式：使用单一向量库
+            vectorstores = [self.vectorstore]
+        else:
+            print("[错误] 未找到可用的向量库")
+            return []
+        
         # 1. 法条检索：使用多个增强查询
         enhanced_queries = self._extract_crime_keywords(query)
         
         for eq in enhanced_queries:
+            for vs in vectorstores:
+                if not vs: continue
+                try:
+                    results = vs.similarity_search_with_score(
+                        eq,
+                        k=statute_k * 2,
+                        filter={"type": "statute"}
+                    )
+                    
+                    for doc, score in results:
+                        doc_id = doc.metadata.get("doc_id", id(doc))
+                        if doc_id not in seen_doc_ids:
+                            seen_doc_ids.add(doc_id)
+                            doc.metadata["relevance_score"] = score
+                            statute_docs.append(doc)
+                            
+                except Exception as e:
+                    print(f"[警告] 法条检索失败: {e}")
+        
+        # 2. 案例检索：使用原始查询
+        for vs in vectorstores:
+            if not vs: continue
             try:
-                results = self.vectorstore.similarity_search_with_score(
-                    eq,
-                    k=statute_k * 2,
-                    filter={"type": "statute"}
+                case_results = vs.similarity_search_with_score(
+                    query, 
+                    k=case_k * 2,
+                    filter={"type": "case"}
                 )
                 
-                for doc, score in results:
+                for doc, score in case_results:
                     doc_id = doc.metadata.get("doc_id", id(doc))
                     if doc_id not in seen_doc_ids:
                         seen_doc_ids.add(doc_id)
                         doc.metadata["relevance_score"] = score
-                        statute_docs.append(doc)
+                        case_docs.append(doc)
                         
             except Exception as e:
-                print(f"[警告] 法条检索失败: {e}")
-        
-        # 2. 案例检索：使用原始查询
-        try:
-            case_results = self.vectorstore.similarity_search_with_score(
-                query, 
-                k=case_k * 2,
-                filter={"type": "case"}
-            )
-            
-            for doc, score in case_results:
-                doc_id = doc.metadata.get("doc_id", id(doc))
-                if doc_id not in seen_doc_ids:
-                    seen_doc_ids.add(doc_id)
-                    doc.metadata["relevance_score"] = score
-                    case_docs.append(doc)
-                    
-        except Exception as e:
-            print(f"[警告] 案例检索失败: {e}")
+                print(f"[警告] 案例检索失败: {e}")
         
         # 3. 方案C增强：关键词重排序 + 语义相关性融合
         def get_keyword_score(doc):
@@ -503,10 +522,15 @@ class JurisRAGEngine:
         
         # 5. 回退检索
         if len(final_docs) == 0:
-            results = self.vectorstore.similarity_search_with_score(query, k=k)
-            for doc, score in results:
-                doc.metadata["relevance_score"] = score
-                final_docs.append(doc)
+            for vs in vectorstores:
+                if not vs: continue
+                try:
+                    results = vs.similarity_search_with_score(query, k=k)
+                    for doc, score in results:
+                        doc.metadata["relevance_score"] = score
+                        final_docs.append(doc)
+                except Exception as e:
+                    print(f"[警告] 回退检索失败: {e}")
         
         return final_docs[:k]
     
@@ -535,6 +559,17 @@ class JurisRAGEngine:
             messages.append(HumanMessage(content=human))
             messages.append(AIMessage(content=ai))
         return messages
+    
+    def _format_history_text(self) -> str:
+        """格式化聊天历史为文本格式，用于提示词"""
+        if not self.chat_history:
+            return "无历史对话"
+        
+        history_text = []
+        for human, ai in self.chat_history[-MAX_HISTORY_TURNS:]:
+            history_text.append(f"用户: {human[:200]}...")
+            history_text.append(f"助手: {ai[:300]}...")
+        return "\n".join(history_text[-6:])  # 最近3轮对话
     
     def _extract_citations(self, docs: List[Document]) -> List[Citation]:
         """从检索文档中提取引用信息"""
@@ -584,12 +619,25 @@ class JurisRAGEngine:
         try:
             # 预取更多候选，以便覆盖 context 中的文档
             k = max(len(docs), RETRIEVAL_TOP_K * 2)
-            scored = self.vectorstore.similarity_search_with_score(query, k=k)
             score_map = {}
-            for d, score in scored:
-                doc_id = d.metadata.get("doc_id")
-                if doc_id:
-                    score_map[doc_id] = score
+            
+            # 获取要使用的向量库列表
+            if self.multi_domain_mode:
+                vectorstores = [vs['vectorstore'] for vs in self.vectorstores_multi.values()]
+            else:
+                vectorstores = [self.vectorstore]
+            
+            # 从所有向量库中获取分数
+            for vs in vectorstores:
+                try:
+                    scored = vs.similarity_search_with_score(query, k=k)
+                    for d, score in scored:
+                        doc_id = d.metadata.get("doc_id")
+                        if doc_id and doc_id not in score_map:
+                            score_map[doc_id] = score
+                except Exception:
+                    continue
+            
             for doc in docs:
                 doc_id = doc.metadata.get("doc_id")
                 if doc_id and doc_id in score_map:
@@ -713,33 +761,49 @@ class JurisRAGEngine:
         # 直接调用LLM生成回答
         from langchain_core.messages import HumanMessage, SystemMessage
         
-        # ==================== 方案D: 优化提示词 ====================
-        qa_prompt = f"""你是"法律智能助手"，一个专业的**中国刑法**问答AI。你只回答刑法相关问题。
+        # ==================== 方案D: 优化提示词 - 详尽回答版 ====================
+        history_text = self._format_history_text()
+        qa_prompt = f"""你是"法律智能助手"，一个专业的**中国刑法**问答AI，擅长提供详细、专业、易懂的法律解答。
 
 【系统说明】
-本系统专注于中国刑法领域，包括：
-- 各类刑事犯罪的认定与量刑（如故意杀人、盗窃、诈骗等）
-- 刑事责任年龄、自首、立功、累犯等量刑情节
-- 正当防卫、紧急避险等免责事由
-- 刑事案例的判决参考
+本系统专注于中国刑法领域，涵盖：
+- 各类刑事犯罪的构成要件、认定标准与量刑区间
+- 刑事责任年龄、自首、立功、累犯、从犯等量刑情节
+- 正当防卫、紧急避险等免责事由及其适用条件
+- 真实刑事案例的判决结果与裁判要旨
 
 【回答原则】
-1. **严格基于检索内容**：只使用检索到的法条和案例回答，不编造
-2. **法条优先**：如检索到《刑法》条文，必须优先引用法条原文
-3. **准确引用**：法条编号和内容必须与检索文档完全一致
-4. **诚实回答**：如检索内容不包含相关规定，明确说明"未检索到相关法条"
+1. **内容详尽**：充分发挥你的专业知识，提供全面、深入的解答
+2. **法条优先**：必须引用检索到的《刑法》条文原文作为核心依据
+3. **通俗易懂**：用清晰的语言解释法律术语，让普通用户也能理解
+4. **实用性强**：结合实际情况分析，给出有价值的参考建议
+5. **准确引用**：法条编号和内容必须与检索文档完全一致，标注[来源X]
 
-【回答格式】
-**直接回答**：用1-2句话概括核心结论（基于法条）
+【回答格式要求】
+请按以下结构组织回答，确保内容充实（400-800字）：
 
-**法律依据**：
-- 引用检索到的法条原文，标注[来源X]
-- 必须包含完整的条款号（如"第二百三十二条"）
+## 📌 核心结论
+用2-3句话概括问题的核心答案，直接回应用户关切。
 
-**案例参考**（如有）：
-- 简要说明相关案例的判决结果
+## 📖 法律依据
+**完整引用**检索到的法条原文，并进行逐条解读：
+- 引用法条全文（标注[来源X]）
+- 解释该法条的含义和适用情形
+- 说明不同情节对应的处罚区间
 
-**提示**：说明注意事项或建议咨询专业律师
+## 🔍 详细分析
+根据问题深入分析：
+- 构成要件或适用条件
+- 量刑因素：影响判决的关键因素
+- 特殊情形：加重/减轻处罚的情形
+- 司法实践中的常见处理方式
+
+## 📋 案例参考（如有相关案例）
+简要介绍检索到的相关案例及判决要点。
+
+## ⚠️ 重要提示
+- 提醒用户注意的事项
+- 建议咨询专业律师的情形
 
 【检索到的上下文】
 {context_text}
@@ -747,7 +811,10 @@ class JurisRAGEngine:
 【用户问题】
 {question}
 
-请基于上述检索内容回答问题。如果检索内容不包含答案所需信息，请诚实说明。"""
+【对话历史】
+{history_text}
+
+请基于上述检索内容，提供详尽、专业、易懂的解答。"""
         
         messages = [HumanMessage(content=qa_prompt)]
         
@@ -852,8 +919,28 @@ class JurisRAGEngine:
         
         context_text = "\n\n".join(context_parts)
         
-        # 构建提示词
-        qa_prompt = f"""你是"法律智能助手"，一个专业的中国刑法问答AI。
+        # 构建提示词（与非流式版本保持一致的详尽风格）
+        history_text = self._format_history_text()
+        qa_prompt = f"""你是"法律智能助手"，一个专业的中国刑法问答AI，擅长提供详细、专业、易懂的法律解答。
+
+【回答要求】
+1. 内容详尽：提供全面、深入的解答（400-800字）
+2. 法条优先：必须引用检索到的《刑法》条文原文
+3. 通俗易懂：用清晰的语言解释法律术语
+4. 准确引用：标注[来源X]
+
+【回答格式】
+## 📌 核心结论
+概括问题的核心答案。
+
+## 📖 法律依据
+引用法条原文并解读。
+
+## 🔍 详细分析
+深入分析构成要件、量刑因素等。
+
+## ⚠️ 重要提示
+注意事项和建议。
 
 【检索到的上下文】
 {context_text}
@@ -861,7 +948,10 @@ class JurisRAGEngine:
 【用户问题】
 {question}
 
-请基于检索内容回答问题，优先引用法条原文。"""
+【对话历史】
+{history_text}
+
+请提供详尽、专业的解答。"""
         
         # 流式生成回答
         full_answer = ""
@@ -899,7 +989,24 @@ class JurisRAGEngine:
         Returns:
             List[Document]: 相似文档列表
         """
-        return self.vectorstore.similarity_search(query, k=k)
+        if self.multi_domain_mode:
+            # 多领域模式：从所有领域检索并合并
+            all_docs = []
+            seen_doc_ids = set()
+            for vs_info in self.vectorstores_multi.values():
+                try:
+                    docs = vs_info['vectorstore'].similarity_search(query, k=k)
+                    for doc in docs:
+                        doc_id = doc.metadata.get("doc_id", id(doc))
+                        if doc_id not in seen_doc_ids:
+                            seen_doc_ids.add(doc_id)
+                            all_docs.append(doc)
+                except Exception as e:
+                    print(f"[警告] 检索失败: {e}")
+            return all_docs[:k]
+        else:
+            # 单领域模式
+            return self.vectorstore.similarity_search(query, k=k)
 
 
 # 便捷函数：获取默认RAG引擎实例

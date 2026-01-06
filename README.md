@@ -1,4 +1,4 @@
-# Juris-RAG：多领域法律智能问答系统
+# Juris-RAG：多领域法律RAG问答系统（课程版）
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![LangChain](https://img.shields.io/badge/LangChain-0.1+-green.svg)](https://langchain.com)
@@ -6,48 +6,24 @@
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-latest-purple.svg)](https://www.trychroma.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 项目简介
+> 📚 课程方向：NLP 综合作业（领域特定 QA）  
+> 🎯 领域：中文法律（刑法为核心，覆盖民/商/行政/劳动）
 
-**Juris-RAG** 是一个基于检索增强生成（RAG）技术的中文多领域法律智能问答系统。该系统整合了**5个法律领域的完整法律文本**和**100,000+司法案例**，通过向量检索和大语言模型，为用户提供准确、专业、可追溯的法律咨询服务。
+## 1. 项目概览
 
-### 核心特性
+Juris-RAG 是一个检索增强生成（RAG）的中文法律问答系统，整合 **5 个法律领域法条** 与 **100k+ CAIL 刑事案例**，提供可解释的多轮问答、引用展示与超范围拒答。
 
-| 特性 | 描述 |
-|------|------|
-| **多领域支持** | 刑法、民法、商法、行政法、劳动法，5大领域独立向量库 |
-| **丰富知识库** | 500+ 法条 + 100,000+ 真实司法案例 |
-| **语义检索** | 基于 BGE-M3 向量模型的语义匹配（1024维） |
-| **智能生成** | Qwen3-8B 生成专业回答，支持 128K 长上下文 |
-| **多轮对话** | 支持上下文理解与连续追问（15轮历史） |
-| **引用与置信度** | 回答展示引用来源、条款号、置信度分数 |
-| **多模式** | 智能问答/文档搜索/系统信息三大模式 |
-| **文档搜索** | 不经 LLM 的直接检索模式，快速查找法条 |
-| **速率限制** | 可配置 RPM/TPM 限制，批处理节流，避免API限流 |
-| **全面评估** | 准确率、引用 F1、幻觉率等多维度指标 |
+### 关键特性
+- 🏛️ 多领域独立向量库：刑/民/商/行政/劳动
+- 📚 知识规模：500+ 法条 + 100,000 案例（满足 5k+ QA 要求）
+- 🔍 检索：BGE-M3 语义检索，法条优先权重，混合法条/案例
+- 🤖 生成：Qwen3-8B（128K 上下文），低温度严谨回答
+- 💬 多轮：保留 15 轮对话，支持追问
+- 📑 引用：展示条款号、来源、置信度
+- 🚫 拒答：越界关键词 + 相关性双判定
+- 🌐 部署：Gradio Web UI，本地即开；可选 `GRADIO_SHARE` 公网
 
-## 系统架构
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                    用户界面 (Gradio Web UI)                       │
-│                  ChatGPT风格布局 + 侧边栏引用展示                  │
-├──────────────────────────────────────────────────────────────────┤
-│                      RAG引擎核心 (rag_engine.py)                   │
-│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────────┐│
-│  │ 问题改写       │→│ 多领域向量检索  │→│ 答案生成 + 引用整理   ││
-│  │ (多轮对话)     │  │ (Top-K混合检索)│  │ (Qwen3-8B)          ││
-│  └────────────────┘  └────────────────┘  └──────────────────────┘│
-├──────────────────────────────────────────────────────────────────┤
-│                    向量数据库 (ChromaDB)                          │
-│ ┌─────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐│
-│ │  刑法库     │ │ 民法库   │ │ 商法库   │ │行政法库  │ │劳动法库││
-│ │ 527条+100K  │ │~1200条   │ │~400条    │ │~120条    │ │~100条  ││
-│ │   案例      │ │          │ │          │ │          │ │        ││
-│ └─────────────┘ └──────────┘ └──────────┘ └──────────┘ └────────┘│
-└──────────────────────────────────────────────────────────────────┘
-```
-
-## 项目结构
+## 2. 项目结构
 
 ```
 Juris-RAG/
@@ -92,161 +68,72 @@ Juris-RAG/
     └── 学号-姓名-01-NLP.md     # 完整项目报告
 ```
 
-## 快速开始
-
-### 1️⃣ 环境准备
+## 3. 快速上手
 
 ```bash
-# 克隆项目
 git clone https://github.com/your-username/Juris-RAG.git
 cd Juris-RAG
 
-# 创建虚拟环境
 python -m venv venv
-
-# Windows 激活
-venv\Scripts\Activate.ps1
-# 或 CMD: venv\Scripts\activate.bat
-
-# Linux/Mac 激活
-source venv/bin/activate
-
-# 安装依赖
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-```
 
-### 2️⃣ 配置 API 密钥
+# 配置 API（必填）
+set SILICONFLOW_API_KEY=your_key
 
-编辑 `.env` 文件：
-
-```env
-SILICONFLOW_API_KEY=your_api_key_here
-CAIL_CASE_LIMIT=100000
-EMBED_BATCH_SIZE=10
-EMBED_SLEEP_SECONDS=0.2
-```
-
-或命令行设置：
-
-```powershell
-# Windows PowerShell
-$env:SILICONFLOW_API_KEY="your_api_key_here"
-
-# Windows CMD
-set SILICONFLOW_API_KEY=your_api_key_here
-
-# Linux/Mac
-export SILICONFLOW_API_KEY=your_api_key_here
-```
-
-### 3️⃣ 验证数据文件
-
-```bash
-python verify_data.py
-```
-
-应该输出：
-```
-✅ criminal_code.txt: 通过
-✅ civil_code.txt: 通过
-✅ commercial_law.txt: 通过
-✅ administrative_law.txt: 通过
-✅ labor_law.txt: 通过
-✅ cail_cases.json: 通过
-```
-
-### 4️⃣ 构建向量数据库
-
-```bash
-# 处理全部数据（~100K案例 + 5个领域法条，约90分钟）
+# 构建向量库（全量）
 python src/data_processing.py
 
-# 或快速测试版（5000案例，约10分钟）
-$env:CAIL_CASE_LIMIT=5000
-python src/data_processing.py
-```
-
-预期输出：
-```
-🌍 多领域模式启动
-============================================================
-
-📚 加载 刑法...
-✅ 刑法: 20527 文档, 8,220,012 字符
-
-📚 加载 民法...
-✅ 民法: 1200 文档, 600,000 字符
-
-... (其他领域)
-
-✅ 多领域向量数据库构建完成！
-   已构建的领域: ['criminal', 'civil', 'commercial', 'administrative', 'labor']
-```
-
-### 5️⃣ 启动 Web 应用
-
-```bash
+# 启动应用（本地）
 python app.py
-```
+# 浏览器访问: http://127.0.0.1:7860
 
-访问 `http://127.0.0.1:7860` 即可使用
-
-### 6️⃣ 运行评估
-
-```bash
+# 评估
 python eval.py
 ```
 
-## 配置说明
+可选环境变量：
+- `GRADIO_SERVER_NAME=0.0.0.0`（局域网）
+- `GRADIO_SHARE=true`（需本地 frpc，生成公网链接）
+- `CAIL_CASE_LIMIT=5000`（抽样向量化）
 
-主要配置项在 `src/config.py`：
+## 4. 数据与处理
+- 法条：刑/民/商/行政/劳动 5 域官方条文（`data/raw/*.txt`）
+- 案例：CAIL2018 `cail_cases.json`（默认 100k，可抽样）
+- 预处理：清洗 → 分条/分块（800/150）→ BGE-M3 向量化 → ChromaDB 持久化到 `data/vector_db/<domain>`
+- 节流：RPM/TPM 限制、批处理、重试+退避，避免 429
 
-```python
-# ==================== 模型配置 ====================
-EMBEDDING_MODEL = "BAAI/bge-m3"        # 1024维向量
-LLM_MODEL = "Qwen/Qwen3-8B"            # 128K上下文
+## 5. 模型与配置
+- Embedding：`BAAI/bge-m3`（SiliconFlow API）
+- LLM：`Qwen/Qwen3-8B`，128K 上下文，低温度严谨回答
+- 检索：Top-K=8，法条优先（1.5x），多查询关键词扩展
+- 多轮：保留 15 轮历史，支持追问
+- 拒答：越界关键词 + 相关性阈值，低置信度提示
 
-# ==================== RAG参数 ====================
-CHUNK_SIZE = 800                       # 保持法条完整
-CHUNK_OVERLAP = 150                    # 块重叠
-RETRIEVAL_TOP_K = 8                    # 检索文档数
-RETRIEVAL_SCORE_THRESHOLD = 0.3        # 相似度阈值
-STATUTE_BOOST = 1.5                    # 法条优先权重
+## 6. 评估结果（23 样本）
+- 准确率：65.22%
+- 引用 F1：86.75%
+- 幻觉率：21.74%
+- 平均响应：9.15s
 
-# ==================== LLM生成 ====================
-LLM_TEMPERATURE = 0.1                  # 严谨的法律问答
-LLM_MAX_TOKENS = 2048                  # 最大生成长度
+命令：`python eval.py`（使用 `data/eval/eval_set.json`）
 
-# ==================== 长上下文 ====================
-MAX_CONTEXT_LENGTH = 128000            # Qwen3支持
-MAX_HISTORY_TURNS = 15                 # 保留15轮对话
+## 7. 功能特性映射课程要求
+- 数据量 ≥5k QA：100k+ 案例 + 500+ 法条 ✅
+- 长上下文/多轮：128K 上下文，15 轮历史 ✅
+- 引用展示：来源/条款号/置信度 ✅
+- 拒绝不确定：越界+低相关性拒答 ✅
+- 部署：Gradio Web Demo，本地/局域网/可选公网 ✅
+- 评估：准确率/引用F1/幻觉率等 ✅
 
-# ==================== 向量化节流 ====================
-EMBED_RPM_LIMIT = 1000                 # 每分钟请求数
-EMBED_TPM_LIMIT = 50000                # 每分钟token数
-EMBED_BATCH_SIZE = 10                  # 批处理大小
-EMBED_SLEEP_SECONDS = 0.2              # 请求间隔
-```
+## 8. 常见问题
+- **打不开 0.0.0.0**：请用 `http://127.0.0.1:7860`
+- **公网链接失败**：需本地 `frpc_windows_amd64_v0.3`，并设置 `GRADIO_SHARE=true`
+- **向量库缺失**：先运行 `python src/data_processing.py`
 
-## 使用示例
-
-### 基础问答
-
-```
-用户: 故意杀人罪怎么判刑？
-
-助手: 根据《中华人民共和国刑法》第二百三十二条规定：
-
-故意杀人的，处死刑、无期徒刑或者十年以上有期徒刑；
-情节较轻的，处三年以上十年以下有期徒刑。
-
-本回答基于法律条文，准确度较高。如有具体案情，建议咨询专业律师。
-
-【引用来源】
-[1] 中华人民共和国刑法 (criminal - statute)
-    条款: 第二百三十二条
-    置信度: 0.85
-```
+## 9. 许可证与作者
+- 许可证：MIT
+- 报告文件：`reports/学号-姓名-01-NLP.md`（请替换为真实学号姓名）
 
 ### 多轮对话示例
 
@@ -264,30 +151,29 @@ EMBED_SLEEP_SECONDS = 0.2              # 请求间隔
 ## 技术亮点
 
 ### 1. 多领域独立向量库
-- 5个法律领域分别建立 ChromaDB
-- 支持单领域或跨域检索
+- 5 个法律领域分别建立 ChromaDB，路径 `data/vector_db/<domain>`
+- 支持单领域或跨域检索，刑法数据自动关联 CAIL 案例
 - 法条优先权重提升（1.5x）
 
 ### 2. 长上下文多轮对话
 - Qwen3-8B 支持 128K 上下文
-- 保留 15 轮历史对话
-- 智能问题改写增强检索效果
+- 保留 15 轮历史并进行问题改写，追问场景检索更稳
 
 ### 3. 引用来源追踪
 - 每个答案标注来源文件、条款号、置信度
-- 支持回溯到原始法条或案例
-- 增强可解释性和信任度
+- 支持回溯到原始法条或案例片段，便于核查
 
-### 4. 智能API速率控制
-- RPM/TPM 限流
-- 批处理节流
-- 自动重试机制
-- 避免 API 限流失败
+### 4. 智能 API 速率控制
+- RPM/TPM 限流与批处理节流
+- 自动重试与指数回退，降低 API 429 风险
 
 ### 5. 混合检索策略
-- 同时检索法条和案例
-- 法条作为法律依据
-- 案例作为实际应用参考
+- 多查询增强（罪名关键词映射）+ 法条/案例混合检索
+- 先取法条保障依据，再补案例提升场景覆盖
+
+### 6. 超范围拒答 + 置信度阈值
+- 关键词检测 + 检索相关性过滤，识别民商/劳动等越界问题
+- 低于阈值时使用拒答模板并标注低置信度
 
 ## 性能指标
 
@@ -364,7 +250,7 @@ MIT License - 详见 [LICENSE](LICENSE)
 用户: 民法典关于合同的规定是什么？
 
 助手: 抱歉，根据现有法律数据库，我无法准确回答此问题。
-本系统主要涵盖刑法相关内容，民法典相关问题建议咨询专业律师。
+本系统当前覆盖刑法、民法、商法、行政法、劳动法五个领域，其余（如知识产权、税法等）建议咨询专业律师。
 ```
 
 ## 评估结果
@@ -492,7 +378,7 @@ MIT License - 详见 [LICENSE](LICENSE)
 | 框架 | LangChain 0.1+ |
 | 向量库 | ChromaDB |
 | Embedding | BAAI/bge-m3 (via SiliconFlow) |
-| LLM | Qwen/Qwen2.5-7B-Instruct |
+| LLM | Qwen/Qwen3-8B（默认）/ Qwen2.5-7B-Instruct（备选） |
 | 前端 | Gradio 4.0+（兼容 6.x） |
 | API | SiliconFlow |
 
