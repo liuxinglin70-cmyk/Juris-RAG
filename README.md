@@ -256,18 +256,7 @@ A: 修改 `build_vector_db()` 中的领域循环，只处理指定领域。
 - [ ] 法律文档 OCR 支持
 - [ ] 可视化评估仪表板
 
-## 贡献指南
 
-欢迎提交 Issue 和 Pull Request！
-
-## 许可证
-
-MIT License - 详见 [LICENSE](LICENSE)
-
-## 联系方式
-
-- Issues: [GitHub Issues](https://github.com/your-username/Juris-RAG/issues)
-- Discussions: [GitHub Discussions](https://github.com/your-username/Juris-RAG/discussions)
 
 ### 多轮对话
 
@@ -426,10 +415,3 @@ MIT License - 详见 [LICENSE](LICENSE)
 
 本系统仅供学习和研究使用，不构成法律建议。如有实际法律问题，请咨询专业律师。
 
-## 许可证
-
-MIT License
-
-## 作者
-
-**[你的姓名]** - [学号]
