@@ -23,57 +23,13 @@ Juris-RAG 是一个检索增强生成（RAG）的中文法律问答系统，整�
 - 🚫 拒答：越界关键词 + 相关性双判定
 - 🌐 部署：Gradio Web UI，本地即开；可选 `GRADIO_SHARE` 公网
 
-## 2. 项目结构
-
-```
-Juris-RAG/
-├── app.py                      # Gradio Web应用入口
 ├── eval.py                     # 评估脚本（准确率、F1等）
-├── verify_data.py              # 数据验证脚本
-├── requirements.txt            # 依赖列表
-├── README.md                   # 项目说明（本文件）
-├── .env                        # 环境变量配置
-├── .gitignore                  # Git忽略配置
-│
-├── assets/                     # 前端样式
-│   └── ui.css                  # 自定义界面样式
-│
-├── src/                        # 源代码目录
-│   ├── __init__.py
-│   ├── config.py               # 全局配置参数
-│   ├── data_processing.py      # 数据处理与多领域向量化
-│   ├── cail_adapter.py         # CAIL数据文件适配
-│   ├── rag_engine.py           # RAG核心引擎与检索逻辑
-│   └── __pycache__/            # Python缓存
-│
-├── data/                       # 数据目录
-│   ├── raw/                    # 原始数据
-│   │   ├── criminal_code.txt    # 刑法（220KB, 76K字符）
-│   │   ├── civil_code.txt       # 民法典（348KB, 120K字符）
-│   │   ├── commercial_law.txt   # 公司法（102KB, 35K字符）
-│   │   ├── administrative_law.txt # 行政处罚法（33KB, 11K字符）
-│   │   ├── labor_law.txt        # 劳动法（27KB, 9K字符）
-│   │   └── cail_cases.json      # CAIL案例（140MB, 100K条）
-│   ├── eval/                   # 评估数据集
-│   │   └── eval_set.json       # 评估问题
-│   ├── vector_db/              # 向量数据库（自动生成）
-│   │   ├── criminal/           # 刑法向量库
-│   │   ├── civil/              # 民法向量库
-│   │   ├── commercial/         # 商法向量库
-│   │   ├── administrative/     # 行政法向量库
-│   │   └── labor/              # 劳动法向量库
-│   └── DATA.md                 # 数据获取说明
-│
-└── reports/                    # 实验报告目录
-    └── 学号-姓名-01-NLP.md     # 完整项目报告
-```
+## 3. 快速上手（普通用户）
 
-## 3. 快速上手
-
-### 3.1 克隆仓库
+### 3.1 环境准备
 
 ```bash
-git clone https://github.com/your-username/Juris-RAG.git
+**方法C: 使用 huggingface-cli（需在 PATH 中）**
 cd Juris-RAG
 
 python -m venv venv
@@ -81,27 +37,74 @@ venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-### 3.2 下载数据集
+### 3.2 获取数据（任选其一）
 
-**方法A: 自动下载（推荐）**
+**方式A｜一键下载（推荐）**
 
 ```bash
 python scripts/setup_data.py
 ```
 
-按提示输入Hugging Face数据集ID（如：`yourusername/juris-rag-dataset`）
+按提示输入 Hugging Face 数据集 ID（如：`yourusername/juris-rag-dataset`）。
 
-**方法B: 手动从Hugging Face下载**
+**方式B｜仅下载数据**（无需 `huggingface-cli`）
 
 ```bash
-pip install huggingface_hub
-huggingface-cli download yourusername/juris-rag-dataset --repo-type dataset --local-dir ./data
+python scripts/download_from_huggingface.py
 ```
 
-**方法C: 使用原始CAIL数据**
+若数据集为私有或网络受限，可提前设置令牌：
+
+```powershell
+set HF_TOKEN=hf_xxxxx
+```
+
+**方式C｜手动/原始数据**
+
+如需自行准备原始 CAIL 数据，参见 [data/DATA.md](data/DATA.md)。
+
+### 3.3 运行应用
+
+```bash
+# 配置必填 API Key
+set SILICONFLOW_API_KEY=your_key
+
+# 首次/全量构建向量库
+python src/data_processing.py
+
+# 启动 Web 应用
+python app.py
+# 浏览器访问: http://127.0.0.1:7860
+```
+
+可选环境变量：
+- `GRADIO_SERVER_NAME=0.0.0.0`（局域网访问）
+- `GRADIO_SHARE=true`（需本地 frpc，生成公网链接）
+- `CAIL_CASE_LIMIT=5000`（抽样向量化）
+
+### 3.4 评估（可选）
+
+```bash
+python eval.py
+```
+
+---
+
+> 维护者上传数据集请参考：`python scripts/quick_upload.py`（详见 [HOW_TO_UPLOAD.md](HOW_TO_UPLOAD.md)）。
+
+若已安装 `huggingface-cli` 但命令不可用，可用完整路径运行（示例）：
+
+```powershell
+C:\Users\NUAA\AppData\Roaming\Python\Python313\Scripts\huggingface-cli.exe download yourusername/juris-rag-dataset --repo-type dataset --local-dir ./data
+```
+
+**方法D: 使用原始CAIL数据**
 
 参考 [data/DATA.md](data/DATA.md) 获取CAIL原始数据集
 
+### 3.3 运行与评估
+
+```bash
 # 配置 API（必填）
 set SILICONFLOW_API_KEY=your_key
 
@@ -120,6 +123,18 @@ python eval.py
 - `GRADIO_SERVER_NAME=0.0.0.0`（局域网）
 - `GRADIO_SHARE=true`（需本地 frpc，生成公网链接）
 - `CAIL_CASE_LIMIT=5000`（抽样向量化）
+
+### 3.4 （维护者）上传数据集到 Hugging Face
+
+如果你需要将本地 `data/raw` + `data/eval` 上传到 Hugging Face：
+
+```bash
+python scripts/quick_upload.py
+```
+
+- 按提示粘贴 Hugging Face 访问令牌（或先设置 `set HF_TOKEN=hf_xxxxx`）
+- 输入你的用户名，脚本会自动创建/更新数据集并生成 README
+- 详见 [HOW_TO_UPLOAD.md](HOW_TO_UPLOAD.md)
 
 ## 4. 数据与处理
 - 法条：刑/民/商/行政/劳动 5 域官方条文（`data/raw/*.txt`）
