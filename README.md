@@ -24,12 +24,12 @@ Juris-RAG 是一个检索增强生成（RAG）的中文法律问答系统，整�
 - 🌐 部署：Gradio Web UI，本地即开；可选 `GRADIO_SHARE` 公网
 
 ├── eval.py                     # 评估脚本（准确率、F1等）
-## 3. 快速上手（普通用户）
+## 3. 快速上手
 
 ### 3.1 环境准备
 
 ```bash
-**方法C: 使用 huggingface-cli（需在 PATH 中）**
+** 使用 huggingface-cli（需在 PATH 中）**
 cd Juris-RAG
 
 python -m venv venv
@@ -87,54 +87,6 @@ python app.py
 ```bash
 python eval.py
 ```
-
----
-
-> 维护者上传数据集请参考：`python scripts/quick_upload.py`（详见 [HOW_TO_UPLOAD.md](HOW_TO_UPLOAD.md)）。
-
-若已安装 `huggingface-cli` 但命令不可用，可用完整路径运行（示例）：
-
-```powershell
-C:\Users\NUAA\AppData\Roaming\Python\Python313\Scripts\huggingface-cli.exe download yourusername/juris-rag-dataset --repo-type dataset --local-dir ./data
-```
-
-**方法D: 使用原始CAIL数据**
-
-参考 [data/DATA.md](data/DATA.md) 获取CAIL原始数据集
-
-### 3.3 运行与评估
-
-```bash
-# 配置 API（必填）
-set SILICONFLOW_API_KEY=your_key
-
-# 构建向量库（全量）
-python src/data_processing.py
-
-# 启动应用（本地）
-python app.py
-# 浏览器访问: http://127.0.0.1:7860
-
-# 评估
-python eval.py
-```
-
-可选环境变量：
-- `GRADIO_SERVER_NAME=0.0.0.0`（局域网）
-- `GRADIO_SHARE=true`（需本地 frpc，生成公网链接）
-- `CAIL_CASE_LIMIT=5000`（抽样向量化）
-
-### 3.4 （维护者）上传数据集到 Hugging Face
-
-如果你需要将本地 `data/raw` + `data/eval` 上传到 Hugging Face：
-
-```bash
-python scripts/quick_upload.py
-```
-
-- 按提示粘贴 Hugging Face 访问令牌（或先设置 `set HF_TOKEN=hf_xxxxx`）
-- 输入你的用户名，脚本会自动创建/更新数据集并生成 README
-- 详见 [HOW_TO_UPLOAD.md](HOW_TO_UPLOAD.md)
 
 ## 4. 数据与处理
 - 法条：刑/民/商/行政/劳动 5 域官方条文（`data/raw/*.txt`）
