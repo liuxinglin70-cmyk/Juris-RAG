@@ -70,6 +70,8 @@ Juris-RAG/
 
 ## 3. 快速上手
 
+### 3.1 克隆仓库
+
 ```bash
 git clone https://github.com/your-username/Juris-RAG.git
 cd Juris-RAG
@@ -77,6 +79,28 @@ cd Juris-RAG
 python -m venv venv
 venv\Scripts\activate  # Windows
 pip install -r requirements.txt
+```
+
+### 3.2 下载数据集
+
+**方法A: 自动下载（推荐）**
+
+```bash
+python scripts/setup_data.py
+```
+
+按提示输入Hugging Face数据集ID（如：`yourusername/juris-rag-dataset`）
+
+**方法B: 手动从Hugging Face下载**
+
+```bash
+pip install huggingface_hub
+huggingface-cli download yourusername/juris-rag-dataset --repo-type dataset --local-dir ./data
+```
+
+**方法C: 使用原始CAIL数据**
+
+参考 [data/DATA.md](data/DATA.md) 获取CAIL原始数据集
 
 # 配置 API（必填）
 set SILICONFLOW_API_KEY=your_key
